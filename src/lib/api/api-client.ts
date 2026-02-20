@@ -1,3 +1,5 @@
+import { useAuthStore } from "@/store/auth-store";
+
 /**
  * Core API Client Utility
  * Handles base URL, authorization headers, and error handling.
@@ -7,13 +9,10 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8
 
 /**
  * Access Token을 가져오는 보조 함수
- * 클라이언트 사이드(브라우저)에서 실행될 때 localStorage에서 토큰을 추출합니다.
+ * Zustand Store의 상태에서 토큰을 추출합니다.
  */
 const getAccessToken = () => {
-    if (typeof window !== "undefined") {
-        return localStorage.getItem("accessToken")
-    }
-    return null
+    return useAuthStore.getState().accessToken;
 }
 
 export async function apiClient<T>(
