@@ -18,6 +18,8 @@ export const metadata: Metadata = {
 };
 
 import QueryProvider from "@/providers/query-provider";
+import { Navbar } from "@/components/layout/Navbar";
+import { Footer } from "@/components/layout/Footer";
 
 export default function RootLayout({
   children,
@@ -25,11 +27,17 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="ko" suppressHydrationWarning>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen flex flex-col`}
       >
-        <QueryProvider>{children}</QueryProvider>
+        <QueryProvider>
+          <Navbar />
+          <main className="flex-1 container mx-auto px-4 py-8">
+            {children}
+          </main>
+          <Footer />
+        </QueryProvider>
       </body>
     </html>
   );
