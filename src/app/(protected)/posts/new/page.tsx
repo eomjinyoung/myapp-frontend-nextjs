@@ -14,7 +14,6 @@ import { useAuthStore } from '@/store/auth-store';
 
 export default function CreatePostPage() {
     const router = useRouter();
-    const { isAuthenticated } = useAuthStore();
     const mutation = useCreatePost();
 
     const [formData, setFormData] = useState({
@@ -22,18 +21,6 @@ export default function CreatePostPage() {
         content: '',
         tags: '',
     });
-
-    if (!isAuthenticated) {
-        return (
-            <div className="flex flex-col items-center justify-center min-h-[400px]">
-                <h2 className="text-2xl font-bold">로그인이 필요합니다</h2>
-                <p className="text-muted-foreground mt-2">게시글을 작성하려면 먼저 로그인해주세요.</p>
-                <Button className="mt-4" onClick={() => router.push('/login')}>
-                    로그인하러 가기
-                </Button>
-            </div>
-        );
-    }
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
