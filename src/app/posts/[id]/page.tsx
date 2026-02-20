@@ -121,8 +121,17 @@ export default function PostDetailPage() {
                 <Button variant="secondary" asChild>
                     <Link href={`/posts/${id}/edit`}>수정</Link>
                 </Button>
-                {/* TODO: 삭제 권한 확인 로직 추가 */}
-                <Button variant="destructive" disabled>삭제</Button>
+                <Button
+                    variant="destructive"
+                    onClick={handleDelete}
+                    disabled={deleteMutation.isPending}
+                >
+                    {deleteMutation.isPending ? (
+                        <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" /> 삭제 중...
+                        </>
+                    ) : '삭제'}
+                </Button>
             </div>
         </div>
     );
