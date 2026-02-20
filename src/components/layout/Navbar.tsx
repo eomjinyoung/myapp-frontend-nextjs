@@ -28,7 +28,13 @@ export function Navbar() {
                 <div className="flex items-center gap-2">
                     {isAuthenticated ? (
                         <>
-                            <Button variant="ghost" size="sm" onClick={() => clearAuth()}>
+                            <Button asChild variant="ghost" size="sm">
+                                <Link href="/me">마이페이지</Link>
+                            </Button>
+                            <Button variant="outline" size="sm" onClick={() => {
+                                clearAuth();
+                                window.location.href = '/';
+                            }}>
                                 로그아웃
                             </Button>
                         </>
@@ -38,7 +44,7 @@ export function Navbar() {
                                 <Link href="/login">로그인</Link>
                             </Button>
                             <Button asChild size="sm">
-                                <Link href="/signup">시작하기</Link>
+                                <Link href="/signup">회원가입</Link>
                             </Button>
                         </>
                     )}
