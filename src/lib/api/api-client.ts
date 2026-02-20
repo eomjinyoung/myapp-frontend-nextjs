@@ -122,7 +122,8 @@ export async function apiClient<T>(
             return {} as T
         }
 
-        return response.json()
+        const text = await response.text();
+        return text ? JSON.parse(text) : ({} as T);
     } catch (error) {
         throw error;
     }
