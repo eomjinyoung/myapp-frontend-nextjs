@@ -1,19 +1,34 @@
 import { useAuthStore } from "@/store/auth-store";
+import { LoginResponseDto } from "./types";
 
 /**
  * Core API Client Utility
- * Handles base URL, authorization headers, and error handling.
+ * Handles base URL, authorization headers, and error handling with automatic token refresh.
  */
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8080"
 
 /**
  * Access Token을 가져오는 보조 함수
- * Zustand Store의 상태에서 토큰을 추출합니다.
  */
 const getAccessToken = () => {
     return useAuthStore.getState().accessToken;
 }
+
+// Token Refresh 진행 상태 관리
+let isRefreshing = false;
+let failedQueue: any[] = [];
+
+const processQueue = (error: Error | null, token: string | null = null) => {
+    failedQueue.forEach((prom) => {
+        if (error) {
+            prom.reject(error);
+        } else {
+            prom.resolve(token);
+        }
+    });
+    failedQueue = [];
+};
 
 export async function apiClient<T>(
     endpoint: string,
@@ -32,26 +47,85 @@ export async function apiClient<T>(
         headers.set("Authorization", `Bearer ${token}`)
     }
 
-    const response = await fetch(url, {
-        ...options,
-        headers,
-    })
+    try {
+        const response = await fetch(url, {
+            ...options,
+            headers,
+        })
 
-    if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}))
-        const error = new Error(
-            errorData.message || `API 요청 실패 (Status: ${response.status})`
-        )
-            // 에러 객체에 상태 코드 추가
-            ; (error as any).status = response.status
-        throw error
+        // 401 Unauthorized 처리 (Refresh Token 로직)
+        // 로그인이나 재발급 요청 시에는 무한 루프 방지를 위해 제외
+        if (response.status === 401 && !endpoint.includes("/api/login") && !endpoint.includes("/api/reissue")) {
+            const refreshToken = useAuthStore.getState().refreshToken;
+
+            if (!refreshToken) {
+                useAuthStore.getState().clearAuth();
+                throw new Error("세션이 만료되었습니다. 다시 로그인해주세요.");
+            }
+
+            // 이미 Refresh 중이면 대기 큐에 추가
+            if (isRefreshing) {
+                return new Promise((resolve, reject) => {
+                    failedQueue.push({ resolve, reject });
+                }).then((token) => {
+                    headers.set("Authorization", `Bearer ${token}`);
+                    return apiClient<T>(endpoint, { ...options, headers });
+                }).catch((err) => Promise.reject(err));
+            }
+
+            isRefreshing = true;
+
+            try {
+                const refreshResponse = await fetch(`${API_BASE_URL}/api/reissue`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ refreshToken }),
+                });
+
+                if (!refreshResponse.ok) {
+                    throw new Error("토큰 갱신에 실패했습니다.");
+                }
+
+                const data: LoginResponseDto = await refreshResponse.json();
+
+                // 새로운 토큰 저장
+                useAuthStore.getState().setTokens(data.accessToken, data.refreshToken);
+
+                // 대기 중인 요청들 처리
+                processQueue(null, data.accessToken);
+
+                // 현재 요청 재시도
+                const newHeaders = new Headers(options.headers);
+                newHeaders.set("Content-Type", "application/json");
+                newHeaders.set("Authorization", `Bearer ${data.accessToken}`);
+
+                return apiClient<T>(endpoint, { ...options, headers: newHeaders });
+            } catch (refreshError) {
+                processQueue(refreshError as Error, null);
+                useAuthStore.getState().clearAuth();
+                throw refreshError;
+            } finally {
+                isRefreshing = false;
+            }
+        }
+
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}))
+            const error = new Error(
+                errorData.message || `API 요청 실패 (Status: ${response.status})`
+            )
+                ; (error as any).status = response.status
+            throw error
+        }
+
+        if (response.status === 204) {
+            return {} as T
+        }
+
+        return response.json()
+    } catch (error) {
+        throw error;
     }
-
-    if (response.status === 204) {
-        return {} as T
-    }
-
-    return response.json()
 }
 
 export const api = {
