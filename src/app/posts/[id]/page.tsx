@@ -1,12 +1,12 @@
 'use client';
 
 import { useParams, useRouter } from 'next/navigation';
-import { usePost } from '@/hooks/use-posts';
+import { usePost, useDeletePost } from '@/hooks/use-posts';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
-import { ChevronLeft, Calendar, User, Eye, Tag } from 'lucide-react';
+import { ChevronLeft, Calendar, User, Eye, Tag, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 
 export default function PostDetailPage() {
@@ -14,6 +14,23 @@ export default function PostDetailPage() {
     const router = useRouter();
     const id = params.id as string;
     const { data: post, isLoading, isError, error } = usePost(id);
+    const deleteMutation = useDeletePost();
+
+    const handleDelete = async () => {
+        if (!confirm('정말로 이 게시글을 삭제하시겠습니까?')) {
+            return;
+        }
+
+        deleteMutation.mutate(id, {
+            onSuccess: () => {
+                alert('게시글이 삭제되었습니다.');
+                router.push('/posts');
+            },
+            onError: (err: any) => {
+                alert(err.message || '게시글 삭제에 실패했습니다.');
+            }
+        });
+    };
 
     if (isError) {
         return (

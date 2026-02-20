@@ -48,3 +48,14 @@ export function useUpdatePost() {
         },
     });
 }
+
+export function useDeletePost() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: (id: string | number) => postApi.delete(id),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: postKeys.lists() });
+        },
+    });
+}
