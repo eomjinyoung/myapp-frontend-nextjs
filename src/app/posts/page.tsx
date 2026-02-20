@@ -3,9 +3,17 @@
 import Link from 'next/link';
 import { usePosts } from '@/hooks/use-posts';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Plus, Eye, Clock, User } from 'lucide-react';
+
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from "@/components/ui/table";
 
 export default function PostsPage() {
     const { data, isLoading, isError, error } = usePosts();
@@ -38,64 +46,82 @@ export default function PostsPage() {
                 </Button>
             </div>
 
-            {isLoading ? (
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                    {[...Array(6)].map((_, i) => (
-                        <Card key={i} className="overflow-hidden">
-                            <CardHeader className="space-y-2">
-                                <Skeleton className="h-4 w-1/2" />
-                                <Skeleton className="h-6 w-full" />
-                            </CardHeader>
-                            <CardContent>
-                                <Skeleton className="h-4 w-full" />
-                                <Skeleton className="h-4 w-4/5 mt-2" />
-                            </CardContent>
-                            <CardFooter>
-                                <Skeleton className="h-4 w-24" />
-                            </CardFooter>
-                        </Card>
-                    ))}
-                </div>
-            ) : (
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                    {data?.posts.map((post) => (
-                        <Card key={post.no} className="flex flex-col hover:shadow-md transition-shadow">
-                            <CardHeader>
-                                <div className="flex items-center text-xs text-muted-foreground mb-2">
-                                    <User className="mr-1 h-3 w-3" /> {post.authorName}
-                                </div>
-                                <CardTitle className="line-clamp-2 text-xl leading-tight">
-                                    <Link href={`/posts/${post.no}`} className="hover:underline">
-                                        {post.title}
-                                    </Link>
-                                </CardTitle>
-                            </CardHeader>
-                            <CardFooter className="mt-auto pt-4 flex items-center justify-between text-xs text-muted-foreground border-t">
-                                <div className="flex items-center gap-3">
-                                    <div className="flex items-center">
-                                        <Clock className="mr-1 h-3 w-3" />
-                                        {new Date(post.createdAt).toLocaleDateString()}
+            <div className="rounded-md border bg-card shadow-sm overflow-hidden">
+                <Table>
+                    <TableHeader className="bg-muted/50">
+                        <TableRow>
+                            <TableHead className="w-[80px] text-center">No</TableHead>
+                            <TableHead>제목</TableHead>
+                            <TableHead className="w-[120px] text-center">작성자</TableHead>
+                            <TableHead className="w-[100px] text-center">조회수</TableHead>
+                            <TableHead className="w-[150px] text-center">작성일</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {isLoading ? (
+                            // Loading Skeleton Rows
+                            [...Array(10)].map((_, i) => (
+                                <TableRow key={i}>
+                                    <TableCell><Skeleton className="h-4 w-8 mx-auto" /></TableCell>
+                                    <TableCell><Skeleton className="h-4 w-full" /></TableCell>
+                                    <TableCell><Skeleton className="h-4 w-16 mx-auto" /></TableCell>
+                                    <TableCell><Skeleton className="h-4 w-8 mx-auto" /></TableCell>
+                                    <TableCell><Skeleton className="h-4 w-24 mx-auto" /></TableCell>
+                                </TableRow>
+                            ))
+                        ) : data?.posts && data.posts.length > 0 ? (
+                            data.posts.map((post) => (
+                                <TableRow key={post.no} className="group hover:bg-muted/30 transition-colors">
+                                    <TableCell className="text-center font-medium text-muted-foreground">
+                                        {post.no}
+                                    </TableCell>
+                                    <TableCell>
+                                        <Link
+                                            href={`/posts/${post.no}`}
+                                            className="font-medium text-foreground hover:text-primary transition-colors block py-1"
+                                        >
+                                            {post.title}
+                                        </Link>
+                                    </TableCell>
+                                    <TableCell className="text-center">
+                                        <div className="flex items-center justify-center gap-1.5 underline decoration-muted-foreground/30 underline-offset-4">
+                                            <User className="h-3.5 w-3.5 text-muted-foreground" />
+                                            <span>{post.authorName}</span>
+                                        </div>
+                                    </TableCell>
+                                    <TableCell className="text-center">
+                                        <div className="flex items-center justify-center gap-1.5 text-muted-foreground">
+                                            <Eye className="h-3.5 w-3.5" />
+                                            <span>{post.views}</span>
+                                        </div>
+                                    </TableCell>
+                                    <TableCell className="text-center text-muted-foreground">
+                                        <div className="flex items-center justify-center gap-1.5">
+                                            <Clock className="h-3.5 w-3.5" />
+                                            <span>{new Date(post.createdAt).toLocaleDateString()}</span>
+                                        </div>
+                                    </TableCell>
+                                </TableRow>
+                            ))
+                        ) : (
+                            <TableRow>
+                                <TableCell colSpan={5} className="h-64 text-center">
+                                    <div className="flex flex-col items-center justify-center space-y-3">
+                                        <p className="text-muted-foreground">등록된 게시글이 없습니다. 첫 번째 글을 작성해보세요!</p>
+                                        <Button asChild variant="outline">
+                                            <Link href="/posts/new">글쓰기</Link>
+                                        </Button>
                                     </div>
-                                    <div className="flex items-center">
-                                        <Eye className="mr-1 h-3 w-3" />
-                                        {post.views}
-                                    </div>
-                                </div>
-                                <Button asChild variant="ghost" size="sm" className="h-8 px-2">
-                                    <Link href={`/posts/${post.no}`}>상세보기</Link>
-                                </Button>
-                            </CardFooter>
-                        </Card>
-                    ))}
-                </div>
-            )}
+                                </TableCell>
+                            </TableRow>
+                        )}
+                    </TableBody>
+                </Table>
+            </div>
 
-            {!isLoading && data?.posts.length === 0 && (
-                <div className="text-center py-20 border-2 border-dashed rounded-lg">
-                    <p className="text-muted-foreground">등록된 게시글이 없습니다. 첫 번째 글을 작성해보세요!</p>
-                    <Button asChild className="mt-4" variant="outline">
-                        <Link href="/posts/new">글쓰기</Link>
-                    </Button>
+            {!isLoading && data && data.totalPages > 1 && (
+                <div className="flex justify-center pt-4">
+                    {/* TODO: 페이징 UI 구현 */}
                 </div>
             )}
         </div>
